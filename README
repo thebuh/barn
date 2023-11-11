@@ -1,0 +1,3 @@
+# ASCOM Alpaca compatible safety monitor driver.
+
+Allows you to expose local files or remote URLs as ASCOM compatible safety monitor devices
