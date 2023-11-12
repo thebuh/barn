@@ -17,7 +17,7 @@ type ConnectedClient struct {
 }
 
 type ApiServer struct {
-	ApiPort             int
+	ApiPort             uint32
 	Barn                Server
 	ServerTransactionID uint32
 	Devices             map[string]map[int]Device
@@ -67,7 +67,7 @@ func (d *Device) DisconnectClient(ip ClientIp) {
 	}
 }
 
-func NewApiServer(barn Server, apiPort int) *ApiServer {
+func NewApiServer(barn Server, apiPort uint32) *ApiServer {
 	return &ApiServer{
 		ApiPort: apiPort,
 		Barn:    barn,
