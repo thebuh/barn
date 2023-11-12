@@ -35,8 +35,21 @@ func TestSafetyMonitorFile_IsSafeRefresh(t *testing.T) {
 	var file = NewSafetyMonitorFile("file", "name", "description", f.Name())
 	assert.Equal(t, true, file.IsSafe(), "they should be equal")
 	f.Truncate(0)
-
+	f.Seek(0, 0)
+	_, err = f.Write([]byte("1"))
+	if err != nil {
+		panic(err)
+	}
+	file.Refresh()
+	assert.Equal(t, true, file.IsSafe(), "they should be equal")
+	f.Truncate(0)
+	f.Seek(0, 0)
 	_, err = f.Write([]byte("false"))
+	file.Refresh()
+	assert.Equal(t, false, file.IsSafe(), "they should be equal")
+	f.Truncate(0)
+	f.Seek(0, 0)
+	_, err = f.Write([]byte("0"))
 	file.Refresh()
 	assert.Equal(t, false, file.IsSafe(), "they should be equal")
 }
