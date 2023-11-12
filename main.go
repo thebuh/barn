@@ -29,9 +29,11 @@ monitors:
 func main() {
 	viper.SetConfigName("barn")
 	viper.SetConfigType("yaml")
-	viper.ReadInConfig()
+	viper.AddConfigPath(".")
 	viper.SetDefault("discovery.port", 32227)
 	viper.SetDefault("api.port", 8080)
+	viper.ReadInConfig()
+
 	//fakeConfig()
 
 	//if err != nil {
