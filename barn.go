@@ -74,7 +74,7 @@ func (s *server) GetMonitorByIndex(id int) (SafetyMonitor, error) {
 	}
 
 	sort.Strings(keySlice)
-	if id > len(keySlice)-1 {
+	if id > len(keySlice)-1 || id < 0 {
 		return nil, errors.New("Index out of range")
 	}
 	return s.monitors[keySlice[id]], nil
