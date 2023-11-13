@@ -7,8 +7,6 @@ import (
 	"sort"
 )
 
-const Version = "0.1"
-
 type Server interface {
 	GetMonitorIds() []string
 	GetMonitor(Id string) SafetyMonitor
