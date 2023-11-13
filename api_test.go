@@ -6,28 +6,28 @@ import (
 )
 
 func TestApiServer_ConnectClient(t *testing.T) {
-	ip := ClientIp("127.0.0.2")
+	id := ClientId("127.0.0.2-1")
 	var d = Device{
 		Id:               "",
 		Type:             "",
 		Index:            0,
 		ConnectedClients: nil,
 	}
-	d.ConnectClient(ip)
-	assert.Equal(t, true, d.IsConnected(ip), "they should be equal")
-	assert.Equal(t, false, d.IsConnected("127.0.0.1"), "they should be equal")
+	d.ConnectClient(id)
+	assert.Equal(t, true, d.IsConnected(id), "they should be equal")
+	assert.Equal(t, false, d.IsConnected("127.0.0.1-1"), "they should be equal")
 }
 
 func TestApiServer_DisconnectClient(t *testing.T) {
-	ip := ClientIp("127.0.0.2")
+	id := ClientId("127.0.0.2-1")
 	var d = Device{
 		Id:               "",
 		Type:             "",
 		Index:            0,
 		ConnectedClients: nil,
 	}
-	d.ConnectClient(ip)
-	assert.Equal(t, true, d.IsConnected(ip), "they should be equal")
-	d.DisconnectClient(ip)
-	assert.Equal(t, false, d.IsConnected(ip), "they should be equal")
+	d.ConnectClient(id)
+	assert.Equal(t, true, d.IsConnected(id), "they should be equal")
+	d.DisconnectClient(id)
+	assert.Equal(t, false, d.IsConnected(id), "they should be equal")
 }

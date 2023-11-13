@@ -9,10 +9,10 @@ import (
 	"strings"
 )
 
-type ClientIp string
+type ClientId string
 
 type ConnectedClient struct {
-	Address             ClientIp
+	ClientId            ClientId
 	ClientTransactionID uint32
 	Connected           bool
 }
@@ -28,23 +28,23 @@ type Device struct {
 	Id               string
 	Type             string
 	Index            int
-	ConnectedClients map[ClientIp]ConnectedClient
+	ConnectedClients map[ClientId]ConnectedClient
 }
 
-func (d *Device) IsConnected(ip ClientIp) bool {
-	for clientIp, client := range d.ConnectedClients {
-		if clientIp == ip {
+func (d *Device) IsConnected(id ClientId) bool {
+	for clientId, client := range d.ConnectedClients {
+		if clientId == id {
 			return client.Connected
 		}
 	}
 	return false
 }
-func (d *Device) ConnectClient(ip ClientIp) {
+func (d *Device) ConnectClient(id ClientId) {
 	if d.ConnectedClients == nil {
-		d.ConnectedClients = make(map[ClientIp]ConnectedClient)
+		d.ConnectedClients = make(map[ClientId]ConnectedClient)
 	}
-	for clientIp, client := range d.ConnectedClients {
-		if clientIp == ip {
+	for clientId, client := range d.ConnectedClients {
+		if clientId == id {
 			if client.Connected == false {
 				client.Connected = true
 				return
@@ -53,17 +53,17 @@ func (d *Device) ConnectClient(ip ClientIp) {
 		}
 	}
 	cc := ConnectedClient{
-		Address:             ip,
+		ClientId:            id,
 		ClientTransactionID: 0,
 		Connected:           true,
 	}
-	d.ConnectedClients[ip] = cc
+	d.ConnectedClients[id] = cc
 }
 
-func (d *Device) DisconnectClient(ip ClientIp) {
-	for clientIp := range d.ConnectedClients {
-		if clientIp == ip {
-			delete(d.ConnectedClients, ip)
+func (d *Device) DisconnectClient(id ClientId) {
+	for clientId := range d.ConnectedClients {
+		if clientId == id {
+			delete(d.ConnectedClients, id)
 		}
 	}
 }
@@ -137,7 +137,7 @@ func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
 				Id:               id,
 				Type:             "safetymonitor",
 				Index:            i,
-				ConnectedClients: make(map[ClientIp]ConnectedClient),
+				ConnectedClients: make(map[ClientId]ConnectedClient),
 			}
 		}
 		resp := managementDevicesListResponse{
@@ -158,16 +158,99 @@ func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
 func (srv *ApiServer) configureSafetyMonitorAPI(router *gin.Engine) {
 	router.PUT("/api/v1/safetymonitor/:device_id/connected", srv.handleSafetyMonitorConnect)
 	router.GET("/api/v1/safetymonitor/:device_id/:action", srv.handleSafetyMonitorRequest)
+	//router.GET("/api/v1/safetymonitor/:device_id/:action", srv.handleSafetyMonitorRequest)
 }
 
 func (srv *ApiServer) prepareAlpacaResponse(c *gin.Context, resp *alpacaResponse) {
-	cid, _ := strconv.Atoi(c.DefaultQuery("ClientTransactionID", "0"))
-	resp.ClientTransactionID = uint32(cid)
-	resp.ServerTransactionID = srv.ServerTransactionID
+	ctid := getClientTransactionId(c)
+	if ctid < 0 {
+		ctid = 0
+	}
 	srv.ServerTransactionID += 1
+	resp.ClientTransactionID = uint32(ctid)
+	resp.ServerTransactionID = srv.ServerTransactionID
+
+}
+
+func getClientId(c *gin.Context) int {
+	var cidv = ""
+	if c.Request.Method == "GET" {
+		cidv = c.DefaultQuery("ClientID", "")
+		if cidv == "" {
+			cidv = c.DefaultQuery("clientid", "")
+			if cidv == "" {
+				return -1
+			}
+		}
+	} else {
+		cidv = c.PostForm("ClientID")
+		if cidv == "" {
+			cidv = c.PostForm("clientid")
+			if cidv == "" {
+				return -1
+			}
+		}
+	}
+	cid, err := strconv.Atoi(cidv)
+	if err != nil {
+		return -1
+	}
+	if cid < 0 {
+		return -1
+	}
+	return cid
+}
+
+func getClientTransactionId(c *gin.Context) int {
+	ctidv := ""
+	if c.Request.Method == "GET" {
+		ctidv = c.DefaultQuery("ClientTransactionID", "")
+		if ctidv == "" {
+			ctidv = c.DefaultQuery("clienttransactionid", "")
+			if ctidv == "" {
+				return -1
+			}
+		}
+	} else {
+		ctidv = c.PostForm("ClientTransactionID")
+		if ctidv == "" {
+			ctidv = c.PostForm("ClientTransactionID")
+			if ctidv == "" {
+				return -1
+			}
+		}
+	}
+	ctid, err := strconv.Atoi(ctidv)
+	if err != nil {
+		return -1
+	}
+	if ctid < 0 {
+		return -1
+	}
+	return ctid
+}
+
+func (srv *ApiServer) validAlpacaRequest(c *gin.Context) bool {
+	if _, err := strconv.Atoi(c.Param("device_id")); err != nil {
+		return false
+	}
+	cid := getClientId(c)
+	if cid < 0 {
+		return false
+	}
+
+	ctidv := getClientTransactionId(c)
+	if ctidv < 0 {
+		return false
+	}
+	return true
 }
 
 func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
+	if !srv.validAlpacaRequest(c) {
+		c.String(400, "Invalid request")
+		return
+	}
 	deviceId, _ := strconv.Atoi(c.Param("device_id"))
 	device, err := srv.Barn.GetMonitorByIndex(deviceId)
 	if err != nil {
@@ -175,11 +258,11 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 		return
 	}
 	action := strings.ToLower(c.Param("action"))
-	ip := ClientIp(c.RemoteIP())
+	id := ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
 	d := srv.Devices["safetymonitor"][deviceId]
 	if action == "is_safe" || action == "issafe" {
 		val := false
-		if d.IsConnected(ip) {
+		if d.IsConnected(id) {
 			val = device.IsSafe()
 		}
 		resp := booleanResponse{
@@ -188,8 +271,8 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
 		c.IndentedJSON(http.StatusOK, resp)
 	} else if action == "connected" {
-		ip := ClientIp(c.RemoteIP())
-		result := d.IsConnected(ip)
+		id := ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
+		result := d.IsConnected(id)
 		resp := booleanResponse{
 			Value: result,
 		}
@@ -239,6 +322,9 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 }
 
 func (srv *ApiServer) handleSafetyMonitorConnect(c *gin.Context) {
+	if !srv.validAlpacaRequest(c) {
+		c.String(400, "Invalid request")
+	}
 	deviceId, _ := strconv.Atoi(c.Param("device_id"))
 	connected := c.PostForm("Connected")
 	_, err := srv.Barn.GetMonitorByIndex(deviceId)
@@ -247,12 +333,15 @@ func (srv *ApiServer) handleSafetyMonitorConnect(c *gin.Context) {
 		return
 	}
 	dev := srv.Devices["safetymonitor"][deviceId]
-	ip := ClientIp(c.RemoteIP())
+	id := ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
 
 	if strings.ToLower(connected) == "true" { // Connect
-		dev.ConnectClient(ip)
-	} else { //Disconnect
-		dev.DisconnectClient(ip)
+		dev.ConnectClient(id)
+	} else if strings.ToLower(connected) == "false" { //Disconnect
+		dev.DisconnectClient(id)
+	} else {
+		c.String(400, "Invalid request")
+		return
 	}
 	resp := alpacaResponse{
 		ClientTransactionID: 0,
