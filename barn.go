@@ -28,21 +28,21 @@ func New() *server {
 func (s *server) LoadMonitorsFromConfig(v *viper.Viper) {
 	http := v.GetStringMap("monitors.http")
 	if http != nil {
-		for id, _ := range http {
+		for id := range http {
 			vt := v.GetStringMapString(fmt.Sprintf("monitors.http.%s", id))
 			s.AddMonitor(NewSafetyMonitorHttpFromCfg(id, vt))
 		}
 	}
 	file := v.GetStringMap("monitors.file")
 	if file != nil {
-		for id, _ := range file {
+		for id := range file {
 			vt := v.GetStringMapString(fmt.Sprintf("monitors.file.%s", id))
 			s.AddMonitor(NewSafetyMonitorFileFromCfg(id, vt))
 		}
 	}
 	dummy := v.GetStringMap("monitors.dummy")
 	if dummy != nil {
-		for id, _ := range dummy {
+		for id := range dummy {
 			vt := v.GetStringMapString(fmt.Sprintf("monitors.dummy.%s", id))
 			s.AddMonitor(NewSafetyMonitorDummyFromCfg(id, vt))
 		}
@@ -59,7 +59,7 @@ func (s *server) RemoveMonitor(id string) {
 
 func (s *server) GetMonitorIds() []string {
 	keys := make([]string, 0)
-	for key, _ := range s.monitors {
+	for key := range s.monitors {
 		keys = append(keys, key)
 	}
 	return keys
@@ -71,7 +71,7 @@ func (s *server) GetMonitor(id string) SafetyMonitor {
 
 func (s *server) GetMonitorByIndex(id int) (SafetyMonitor, error) {
 	keySlice := make([]string, 0)
-	for key, _ := range s.monitors {
+	for key := range s.monitors {
 		keySlice = append(keySlice, key)
 	}
 

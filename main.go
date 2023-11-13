@@ -1,9 +1,9 @@
 package main
 
 import (
-	"barn/cmd"
 	"bytes"
 	"github.com/spf13/viper"
+	"github.com/thebuh/barn/cmd"
 	"time"
 )
 
