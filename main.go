@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/thebuh/barn/cmd"
 	"time"
@@ -37,7 +38,7 @@ func main() {
 	viper.SetDefault("discovery.port", 32227)
 	viper.SetDefault("api.port", 8080)
 	viper.ReadInConfig()
-
+	log.SetFormatter(&log.TextFormatter{})
 	//fakeConfig()
 
 	//if err != nil {

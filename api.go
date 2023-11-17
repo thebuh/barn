@@ -76,6 +76,7 @@ func NewApiServer(barn Server, apiPort uint32) *ApiServer {
 }
 
 func (srv *ApiServer) Start() {
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Alpaca Barn server")

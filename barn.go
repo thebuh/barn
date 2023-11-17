@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"sort"
 )
 
 type Server interface {
@@ -73,20 +73,26 @@ func (s *server) GetMonitor(id string) SafetyMonitor {
 }
 
 func (s *server) GetMonitorByIndex(id int) (SafetyMonitor, error) {
-	keySlice := make([]string, 0)
+	keys := make([]string, 0)
 	for key := range s.monitors {
-		keySlice = append(keySlice, key)
+		keys = append(keys, key)
 	}
 
-	sort.Strings(keySlice)
-	if id > len(keySlice)-1 || id < 0 {
+	if id > len(keys)-1 || id < 0 {
 		return nil, errors.New("Index out of range")
 	}
-	return s.monitors[keySlice[id]], nil
+	return s.monitors[keys[id]], nil
 }
 
 func (s *server) Refresh() {
 	for _, val := range s.monitors {
-		go val.Refresh()
+		m := val
+		go func() {
+			m.Refresh()
+			log.WithFields(log.Fields{
+				"monitor": m.GetName(),
+				"state":   m.IsSafe(),
+			}).Info(fmt.Sprintf("[BARN] Monitor [%s]. Refreshing state. Now: [%t]", m.GetName(), m.IsSafe()))
+		}()
 	}
 }
