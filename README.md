@@ -31,6 +31,21 @@ monitors: # (mandatory)
     fake:
       is_safe: true # State of the monitor
 ```
+### Rules
+
+By default, barn matches **1** or **true** (case-insensitive) as "safe". You can customize that behaviour with following configuration
+
+```yaml
+monitors:
+  http:
+    remote:
+      name: "Some remote url"
+      description: "Some remote url description"
+      url: http://127.0.0.1/test
+      rule:
+        invert: false # Invert matching result (if pattern key exists applied after match) 
+        pattern: "(open|opening)" # Regular expression to match
+```
 
 ## Todo
-- Regular expressions and JSON support. For now **barn** only looks for "true" / "1" in files and urls. 
+- JSON support.

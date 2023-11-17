@@ -19,6 +19,9 @@ monitors:
       name: "Some remote url"
       description: "Some remote url description"
       url: http://127.0.0.1/test
+      rule:
+        invert: true
+        pattern: "'^[A-Z]+\\.com$"
     remote2:
       name: "Some remote url2"
       description: "Some remote url2 description"
@@ -78,6 +81,8 @@ func TestBarnServer_LoadConfig(t *testing.T) {
 		assert.Equal(t, "http://127.0.0.1/test", v.url, "should be equal")
 		assert.Equal(t, "Some remote url", v.GetName(), "should be equal")
 		assert.Equal(t, "Some remote url description", v.GetDescription(), "should be equal")
+		assert.Equal(t, "'^[A-Z]+\\.com$", v.rule.pattern, "should be equal")
+		assert.Equal(t, false, v.rule.invert, "should be equal")
 	default:
 		assert.Fail(t, "Wrong type")
 	}

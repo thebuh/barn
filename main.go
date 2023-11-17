@@ -18,8 +18,12 @@ monitors:
       name: "Local file"
       description: "Some local file description"
       path: /tmp/test
+      rule:
+		regex: '^[A-Z]+\\.com$
+		invert: true
   dummy:
     fake:
+      name: "Fake monitor"
       is_safe: true
 `)
 
