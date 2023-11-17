@@ -33,7 +33,7 @@ func NewSafetyMatchingRule(invert bool, pattern string) *SafetyMatchingRule {
 	}
 	regex, err := regexp.Compile("(?i)" + pattern)
 	if err != nil || pattern == "" {
-		regex, err = regexp.Compile(`(?i)true|1`)
+		regex, _ = regexp.Compile(`(?i)true|1`)
 	}
 	rule.regex = regex
 	return rule
