@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"runtime/debug"
 	"strconv"
@@ -282,6 +283,13 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 			Value: val,
 		}
 		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
+
+		log.WithFields(log.Fields{
+			"deviceid": deviceId,
+			"monitor":  device.GetName(),
+			"state":    val,
+		}).Info(fmt.Sprintf("[BARN] Api [%s]. Returning state: [%t]", device.GetName(), val))
+
 		c.IndentedJSON(http.StatusOK, resp)
 	} else if action == "connected" {
 		result := srv.isRequestConnected(c)

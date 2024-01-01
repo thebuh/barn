@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"sort"
 )
 
 type Server interface {
@@ -65,6 +66,7 @@ func (s *server) GetMonitorIds() []string {
 	for key := range s.monitors {
 		keys = append(keys, key)
 	}
+	sort.Sort(sort.StringSlice(keys))
 	return keys
 }
 
@@ -73,11 +75,7 @@ func (s *server) GetMonitor(id string) SafetyMonitor {
 }
 
 func (s *server) GetMonitorByIndex(id int) (SafetyMonitor, error) {
-	keys := make([]string, 0)
-	for key := range s.monitors {
-		keys = append(keys, key)
-	}
-
+	keys := s.GetMonitorIds()
 	if id > len(keys)-1 || id < 0 {
 		return nil, errors.New("Index out of range")
 	}
