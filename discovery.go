@@ -49,11 +49,11 @@ func (s *DiscoveryServer) Start() {
 		if err != nil {
 			continue
 		}
-		log.Debug(fmt.Sprintf("GOT Discovery packet From %s packet \"%s\"", addr, string(buf)))
+		log.Debug(fmt.Sprintf("GOT Discovery packet From %s", addr))
 		msg := string(buf)
 		//Only handle and reply to discovery packets 1st version
 		if strings.HasPrefix(msg, "alpacadiscovery1") {
-			s.handleDiscoveryPacket(addr)
+			go s.handleDiscoveryPacket(addr)
 		}
 	}
 }
