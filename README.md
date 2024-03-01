@@ -6,13 +6,21 @@
 
 There are no compiled binaries provided (for now), but you can use docker to run barn.
 
+### Using docker compose:
+
+Place barn.yaml file into cloned directory and run:
+```shell
+docker compose up -d
+```
+
+### Or using just docker:
 Build image:
 ```shell
 docker build . -t barn
 ```
 And then run it, adjust ports and config file path if necessary:
 ```shell
-docker run -p8080:8080 -p32227:32227 -it -v <Full path to config file>/barn.yaml:/barn.yaml barn
+docker run -p8080:8080 -p32227:32227/udp -it -v <Full path to config file>/barn.yaml:/barn.yaml barn
 ```
 
 ## Configuration
