@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -103,11 +104,12 @@ func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
 		c.IndentedJSON(http.StatusOK, resp)
 	})
 	router.GET("/management/v1/description", func(c *gin.Context) {
+		bi, _ := debug.ReadBuildInfo()
 		resp := managementDescriptionResponse{
 			Value: ServerDescription{
 				ServerName:          "Alpaca Barn",
 				Manufacturer:        "https://github.com/thebuh/barn",
-				ManufacturerVersion: Version,
+				ManufacturerVersion: bi.Main.Version,
 				Location:            "Location string",
 			},
 			alpacaResponse: alpacaResponse{
@@ -212,8 +214,9 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
 		c.IndentedJSON(http.StatusOK, resp)
 	} else if action == "driverversion" {
+		bi, _ := debug.ReadBuildInfo()
 		resp := stringResponse{
-			Value: Version,
+			Value: bi.Main.Version,
 		}
 		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
 		c.IndentedJSON(http.StatusOK, resp)
