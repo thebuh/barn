@@ -27,7 +27,7 @@ monitors:
 }
 
 func main() {
-	viper.SetConfigName("config")
+	viper.SetConfigName("barn")
 	viper.SetConfigType("yaml")
 	viper.ReadInConfig()
 	//fakeConfig()
