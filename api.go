@@ -175,7 +175,7 @@ func (srv *ApiServer) prepareAlpacaResponse(c *gin.Context, resp *alpacaResponse
 }
 
 func getClientId(c *gin.Context) int {
-	var cidv = ""
+	cidv := ""
 	if c.Request.Method == "GET" {
 		cidv = c.DefaultQuery("ClientID", "")
 		if cidv == "" {
