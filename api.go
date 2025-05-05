@@ -257,7 +257,3 @@ func (srv *ApiServer) handleSafetyMonitorConnect(c *gin.Context) {
 	srv.prepareAlpacaResponse(c, &resp)
 	c.IndentedJSON(http.StatusOK, resp)
 }
-
-func (srv *ApiServer) isConnected() {
-
-}
