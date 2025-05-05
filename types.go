@@ -56,7 +56,7 @@ type DeviceConfiguration struct {
 	DeviceName   string `json:"DeviceName"`
 	DeviceType   string `json:"DeviceType"`
 	DeviceNumber int    `json:"DeviceNumber"`
-	UniqueID     string `json:"DeviceId"`
+	UniqueID     string `json:"UniqueID"`
 }
 
 type managementDescriptionResponse struct {
