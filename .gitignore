@@ -21,4 +21,7 @@
 go.work
 
 .idea/
+.vscode/
+.cursor/
+
 .DS_Store
