@@ -34,6 +34,7 @@ func TestSafetyMonitorFile_IsSafeRefresh(t *testing.T) {
 	}
 	var file = NewSafetyMonitorFile("file", "name", "description", f.Name())
 	assert.Equal(t, true, file.IsSafe(), "they should be equal")
+	assert.Equal(t, "TrUe", file.GetRawValue(), "they should be equal")
 	f.Truncate(0)
 	f.Seek(0, 0)
 	_, err = f.Write([]byte("1"))
@@ -90,6 +91,7 @@ func TestSafetyMonitorHttp_IsSafe(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	var httpsm = NewSafetyMonitorHttp("id", "name", "description", "http://127.0.0.1:12345/test")
 	assert.Equal(t, true, httpsm.IsSafe(), "they should be equal")
+	assert.Equal(t, "TrUe", httpsm.GetRawValue(), "they should be equal")
 }
 
 func TestSafetyMonitorHttp_InvalidUrl(t *testing.T) {

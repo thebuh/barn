@@ -16,6 +16,7 @@ type SafetyMonitor interface {
 	GetId() string
 	GetName() string
 	GetDescription() string
+	GetRawValue() string
 }
 
 func IsSafeString(content string) bool {
@@ -31,7 +32,8 @@ type SafetyMonitorHttp struct {
 	description     string
 	safe            bool
 	url             string
-	LastRefreshTime time.Time
+	lastRefreshTime time.Time
+	lastValue       string
 }
 
 func NewSafetyMonitorHttp(id string, name string, description string, url string) *SafetyMonitorHttp {
@@ -61,6 +63,10 @@ func (sm *SafetyMonitorHttp) IsSafe() bool {
 	return sm.safe
 }
 
+func (sm *SafetyMonitorHttp) GetRawValue() string {
+	return sm.lastValue
+}
+
 func (sm *SafetyMonitorHttp) Refresh() {
 	client := http.Client{
 		Timeout: 5 * time.Second,
@@ -68,18 +74,22 @@ func (sm *SafetyMonitorHttp) Refresh() {
 	response, err := client.Get(sm.url)
 	if err != nil {
 		sm.safe = false
+		sm.lastValue = ""
 		return
 	}
 	buf := make([]byte, 1024)
-	_, err = response.Body.Read(buf)
+	n, err := response.Body.Read(buf)
 	if err != nil && err != io.EOF {
 		sm.safe = false
+		sm.lastValue = ""
 		return
 	}
+	buf = buf[:n]
 	_ = response.Body.Close()
 	content := string(buf)
+	sm.lastValue = content
 	sm.safe = IsSafeString(content)
-	sm.LastRefreshTime = time.Now()
+	sm.lastRefreshTime = time.Now()
 }
 
 func NewSafetyMonitorDummyFromCfg(id string, cfg map[string]string) *SafetyMonitorDummy {
@@ -125,6 +135,9 @@ func (sm *SafetyMonitorDummy) GetName() string {
 func (sm *SafetyMonitorDummy) GetDescription() string {
 	return sm.description
 }
+func (sm *SafetyMonitorDummy) GetRawValue() string {
+	return ""
+}
 
 type SafetyMonitorFile struct {
 	id              string
@@ -132,7 +145,8 @@ type SafetyMonitorFile struct {
 	description     string
 	safe            bool
 	path            string
-	LastRefreshTime time.Time
+	lastRefreshTime time.Time
+	lastValue       string
 }
 
 func (sm *SafetyMonitorFile) GetId() string {
@@ -146,6 +160,10 @@ func (sm *SafetyMonitorFile) GetDescription() string {
 	return sm.description
 }
 
+func (sm *SafetyMonitorFile) GetRawValue() string {
+	return sm.lastValue
+}
+
 func (sm *SafetyMonitorFile) IsSafe() bool {
 	return sm.safe
 }
@@ -154,18 +172,22 @@ func (sm *SafetyMonitorFile) Refresh() {
 	f, err := os.OpenFile(sm.path, os.O_RDONLY, 0444)
 	if errors.Is(err, fs.ErrNotExist) {
 		sm.safe = false
+		sm.lastValue = ""
 		return
 	}
 	defer f.Close()
 	buf := make([]byte, 1024)
-	_, err = f.Read(buf)
+	n, err := f.Read(buf)
 	if err != nil {
 		sm.safe = false
+		sm.lastValue = ""
 		return
 	}
+	buf = buf[:n]
 	content := string(buf)
+	sm.lastValue = content
 	sm.safe = IsSafeString(content)
-	sm.LastRefreshTime = time.Now()
+	sm.lastRefreshTime = time.Now()
 }
 
 func NewSafetyMonitorFileFromCfg(id string, cfg map[string]string) *SafetyMonitorFile {
