@@ -12,7 +12,7 @@ docker build . -t barn
 ```
 And then run it, adjust ports and config file path if necessary:
 ```shell
-docker run -p8888:8888 -p32227:32227 -it -v <Full path to config file>/barn.yaml:/barn.yaml barn
+docker run -p8080:8080 -p32227:32227 -it -v <Full path to config file>/barn.yaml:/barn.yaml barn
 ```
 
 ## Configuration
