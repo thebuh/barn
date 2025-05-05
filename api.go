@@ -60,7 +60,7 @@ func (d *Device) ConnectClient(ip ClientIp) {
 }
 
 func (d *Device) DisconnectClient(ip ClientIp) {
-	for clientIp, _ := range d.ConnectedClients {
+	for clientIp := range d.ConnectedClients {
 		if clientIp == ip {
 			delete(d.ConnectedClients, ip)
 		}
@@ -82,7 +82,10 @@ func (srv *ApiServer) Start() {
 	})
 	srv.configureManagementAPI(router)
 	srv.configureSafetyMonitorAPI(router)
-	router.Run(fmt.Sprintf("0.0.0.0:%d", srv.ApiPort))
+	err := router.Run(fmt.Sprintf("0.0.0.0:%d", srv.ApiPort))
+	if err != nil {
+		return
+	}
 }
 
 func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
