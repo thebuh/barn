@@ -52,7 +52,7 @@ func main() {
 	go api.Start()
 	for {
 		barnSrv.Refresh()
-		time.Sleep(30)
+		time.Sleep(10)
 	}
 	cmd.Execute()
 }
