@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  barn:
+    build: .
+    ports:
+      - "8080:8080"
+      - "32227:32227"
+    volumes:
+      - ./barn.yaml:/barn.yaml
+    restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
