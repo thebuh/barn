@@ -30,6 +30,8 @@ func main() {
 	viper.SetConfigName("barn")
 	viper.SetConfigType("yaml")
 	viper.ReadInConfig()
+	viper.SetDefault("discovery.port", 32227)
+	viper.SetDefault("api.port", 8080)
 	//fakeConfig()
 
 	//if err != nil {
@@ -38,8 +40,11 @@ func main() {
 	barnSrv := New()
 	mCfg := viper.GetViper()
 	barnSrv.LoadMonitorsFromConfig(mCfg)
-	discovery := NewDiscoverySever(32227, 8080)
-	api := NewApiServer(barnSrv, 8080)
+
+	apiPort := viper.GetUint32("api.port")
+	discoveryPort := viper.GetUint32("discovery.port")
+	discovery := NewDiscoverySever(discoveryPort, apiPort)
+	api := NewApiServer(barnSrv, apiPort)
 	go discovery.Start()
 	defer discovery.Close()
 	go api.Start()
