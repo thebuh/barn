@@ -21,14 +21,14 @@ type ApiServer struct {
 	ApiPort             uint32
 	Barn                Server
 	ServerTransactionID uint32
-	Devices             map[string]map[int]Device
+	Devices             map[string]map[int]*Device
 }
 
 type Device struct {
 	Id               string
 	Type             string
 	Index            int
-	ConnectedClients map[ClientId]ConnectedClient
+	ConnectedClients map[ClientId]*ConnectedClient
 }
 
 func (d *Device) IsConnected(id ClientId) bool {
@@ -40,9 +40,6 @@ func (d *Device) IsConnected(id ClientId) bool {
 	return false
 }
 func (d *Device) ConnectClient(id ClientId) {
-	if d.ConnectedClients == nil {
-		d.ConnectedClients = make(map[ClientId]ConnectedClient)
-	}
 	for clientId, client := range d.ConnectedClients {
 		if clientId == id {
 			if client.Connected == false {
@@ -52,7 +49,7 @@ func (d *Device) ConnectClient(id ClientId) {
 			return
 		}
 	}
-	cc := ConnectedClient{
+	cc := &ConnectedClient{
 		ClientId:            id,
 		ClientTransactionID: 0,
 		Connected:           true,
@@ -72,7 +69,7 @@ func NewApiServer(barn Server, apiPort uint32) *ApiServer {
 	return &ApiServer{
 		ApiPort: apiPort,
 		Barn:    barn,
-		Devices: make(map[string]map[int]Device),
+		Devices: make(map[string]map[int]*Device),
 	}
 }
 
@@ -81,6 +78,16 @@ func (srv *ApiServer) Start() {
 	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Alpaca Barn server")
 	})
+	srv.Devices["safetymonitor"] = make(map[int]*Device)
+	ids := srv.Barn.GetMonitorIds()
+	for i, id := range ids {
+		srv.Devices["safetymonitor"][i] = &Device{
+			Id:               id,
+			Type:             "safetymonitor",
+			Index:            i,
+			ConnectedClients: make(map[ClientId]*ConnectedClient),
+		}
+	}
 	srv.configureManagementAPI(router)
 	srv.configureSafetyMonitorAPI(router)
 	err := router.Run(fmt.Sprintf("0.0.0.0:%d", srv.ApiPort))
@@ -124,7 +131,7 @@ func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
 	})
 	router.GET("/management/v1/configureddevices", func(c *gin.Context) {
 		var val []DeviceConfiguration
-		srv.Devices["safetymonitor"] = make(map[int]Device)
+
 		ids := srv.Barn.GetMonitorIds()
 		for i, id := range ids {
 			val = append(val, DeviceConfiguration{
@@ -133,12 +140,6 @@ func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
 				DeviceNumber: i,
 				UniqueID:     id,
 			})
-			srv.Devices["safetymonitor"][i] = Device{
-				Id:               id,
-				Type:             "safetymonitor",
-				Index:            i,
-				ConnectedClients: make(map[ClientId]ConnectedClient),
-			}
 		}
 		resp := managementDevicesListResponse{
 			Value: val,
@@ -157,8 +158,9 @@ func (srv *ApiServer) configureManagementAPI(router *gin.Engine) {
 
 func (srv *ApiServer) configureSafetyMonitorAPI(router *gin.Engine) {
 	router.PUT("/api/v1/safetymonitor/:device_id/connected", srv.handleSafetyMonitorConnect)
+	router.PUT("/api/v1/safetymonitor/:device_id/action", srv.handleSafetyMonitorAction)
 	router.GET("/api/v1/safetymonitor/:device_id/:action", srv.handleSafetyMonitorRequest)
-	//router.GET("/api/v1/safetymonitor/:device_id/:action", srv.handleSafetyMonitorRequest)
+
 }
 
 func (srv *ApiServer) prepareAlpacaResponse(c *gin.Context, resp *alpacaResponse) {
@@ -199,6 +201,10 @@ func getClientId(c *gin.Context) int {
 		return -1
 	}
 	return cid
+}
+
+func getFullClientId(c *gin.Context) ClientId {
+	return ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
 }
 
 func getClientTransactionId(c *gin.Context) int {
@@ -246,6 +252,12 @@ func (srv *ApiServer) validAlpacaRequest(c *gin.Context) bool {
 	return true
 }
 
+func (srv *ApiServer) isRequestConnected(c *gin.Context) bool {
+	deviceId, _ := strconv.Atoi(c.Param("device_id"))
+	device := srv.Devices["safetymonitor"][deviceId]
+	return device.IsConnected(getFullClientId(c))
+}
+
 func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 	if !srv.validAlpacaRequest(c) {
 		c.String(400, "Invalid request")
@@ -258,11 +270,9 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 		return
 	}
 	action := strings.ToLower(c.Param("action"))
-	id := ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
-	d := srv.Devices["safetymonitor"][deviceId]
-	if action == "is_safe" || action == "issafe" {
+	if action == "issafe" {
 		val := false
-		if d.IsConnected(id) {
+		if srv.isRequestConnected(c) {
 			val = device.IsSafe()
 		}
 		resp := booleanResponse{
@@ -271,8 +281,7 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
 		c.IndentedJSON(http.StatusOK, resp)
 	} else if action == "connected" {
-		id := ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
-		result := d.IsConnected(id)
+		result := srv.isRequestConnected(c)
 		resp := booleanResponse{
 			Value: result,
 		}
@@ -305,7 +314,7 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, resp)
 	} else if action == "supportedactions" {
 		resp := stringlistResponse{
-			Value: []string{"issafe"},
+			Value: []string{"RawValue"},
 		}
 		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
 		c.IndentedJSON(http.StatusOK, resp)
@@ -324,6 +333,7 @@ func (srv *ApiServer) handleSafetyMonitorRequest(c *gin.Context) {
 func (srv *ApiServer) handleSafetyMonitorConnect(c *gin.Context) {
 	if !srv.validAlpacaRequest(c) {
 		c.String(400, "Invalid request")
+		return
 	}
 	deviceId, _ := strconv.Atoi(c.Param("device_id"))
 	connected := c.PostForm("Connected")
@@ -333,7 +343,7 @@ func (srv *ApiServer) handleSafetyMonitorConnect(c *gin.Context) {
 		return
 	}
 	dev := srv.Devices["safetymonitor"][deviceId]
-	id := ClientId(c.RemoteIP() + "-" + strconv.Itoa(getClientId(c)))
+	id := getFullClientId(c)
 
 	if strings.ToLower(connected) == "true" { // Connect
 		dev.ConnectClient(id)
@@ -351,4 +361,38 @@ func (srv *ApiServer) handleSafetyMonitorConnect(c *gin.Context) {
 	}
 	srv.prepareAlpacaResponse(c, &resp)
 	c.IndentedJSON(http.StatusOK, resp)
+}
+
+func (srv *ApiServer) handleSafetyMonitorAction(c *gin.Context) {
+	if !srv.validAlpacaRequest(c) {
+		c.String(400, "Invalid request")
+		return
+	}
+	deviceId, _ := strconv.Atoi(c.Param("device_id"))
+	device, err := srv.Barn.GetMonitorByIndex(deviceId)
+	if err != nil {
+		c.String(400, "Device not found")
+		return
+	}
+
+	action := c.PostForm("Action")
+	_, err = srv.Barn.GetMonitorByIndex(deviceId)
+	if err != nil {
+		c.String(400, "Device not found")
+		return
+	}
+	if !srv.isRequestConnected(c) {
+		c.String(400, "Not connected")
+		return
+	}
+	if action == "RawValue" {
+		resp := stringResponse{
+			Value: device.GetRawValue(),
+		}
+		srv.prepareAlpacaResponse(c, &resp.alpacaResponse)
+		c.IndentedJSON(http.StatusOK, resp)
+	} else {
+		c.String(400, "The device did not understand which operation was being requested or insufficient information was given to complete the operation.")
+		return
+	}
 }
