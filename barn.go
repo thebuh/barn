@@ -27,22 +27,27 @@ func (s *server) LoadMonitorsFromConfig(v *viper.Viper) {
 	http := v.GetStringMap("monitors.http")
 	if http != nil {
 		for id := range http {
-			vt := v.GetStringMapString(fmt.Sprintf("monitors.http.%s", id))
-			s.AddMonitor(NewSafetyMonitorHttpFromCfg(id, vt))
+			vt := v.Sub(fmt.Sprintf("monitors.http.%s", id))
+			rule := NewSafetyMatchingRule(vt.GetBool("rule.invert"), vt.GetString("rule.pattern"))
+			sm := NewSafetyMonitorHttp(id, vt.GetString("name"), vt.GetString("description"), vt.GetString("url"), rule)
+			s.AddMonitor(sm)
 		}
 	}
 	file := v.GetStringMap("monitors.file")
 	if file != nil {
 		for id := range file {
-			vt := v.GetStringMapString(fmt.Sprintf("monitors.file.%s", id))
-			s.AddMonitor(NewSafetyMonitorFileFromCfg(id, vt))
+			vt := v.Sub(fmt.Sprintf("monitors.file.%s", id))
+			rule := NewSafetyMatchingRule(vt.GetBool("rule.invert"), vt.GetString("rule.pattern"))
+			sm := NewSafetyMonitorFile(id, vt.GetString("name"), vt.GetString("description"), vt.GetString("path"), rule)
+			s.AddMonitor(sm)
 		}
 	}
 	dummy := v.GetStringMap("monitors.dummy")
 	if dummy != nil {
 		for id := range dummy {
-			vt := v.GetStringMapString(fmt.Sprintf("monitors.dummy.%s", id))
-			s.AddMonitor(NewSafetyMonitorDummyFromCfg(id, vt))
+			vt := v.Sub(fmt.Sprintf("monitors.dummy.%s", id))
+			sm := NewSafetyMonitorDummy(id, vt.GetString("name"), vt.GetString("description"), vt.GetBool("is_safe"))
+			s.AddMonitor(sm)
 		}
 	}
 }

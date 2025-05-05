@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"strings"
+	"regexp"
 	"time"
 )
 
@@ -19,11 +19,34 @@ type SafetyMonitor interface {
 	GetRawValue() string
 }
 
-func IsSafeString(content string) bool {
-	if strings.HasPrefix(strings.ToLower(content), "true") || strings.HasPrefix(strings.ToLower(content), "1") {
-		return true
+type SafetyMatchingRule struct {
+	invert  bool
+	pattern string
+
+	regex *regexp.Regexp
+}
+
+func NewSafetyMatchingRule(invert bool, pattern string) *SafetyMatchingRule {
+	rule := &SafetyMatchingRule{
+		invert:  false,
+		pattern: pattern,
 	}
-	return false
+	regex, err := regexp.Compile("(?i)" + pattern)
+	if err != nil || pattern == "" {
+		regex, err = regexp.Compile(`(?i)true|1`)
+	}
+	rule.regex = regex
+	return rule
+}
+
+func (rule *SafetyMatchingRule) isSafe(content string) bool {
+	if rule.regex == nil {
+		return false
+	}
+	if rule.invert {
+		return !rule.regex.MatchString(content)
+	}
+	return rule.regex.MatchString(content)
 }
 
 type SafetyMonitorHttp struct {
@@ -34,17 +57,18 @@ type SafetyMonitorHttp struct {
 	url             string
 	lastRefreshTime time.Time
 	lastValue       string
+	rule            *SafetyMatchingRule
+	client          *http.Client
 }
 
-func NewSafetyMonitorHttp(id string, name string, description string, url string) *SafetyMonitorHttp {
+func NewSafetyMonitorHttp(id string, name string, description string, url string, rule *SafetyMatchingRule) *SafetyMonitorHttp {
 	monitor := &SafetyMonitorHttp{id: id, name: name, description: description, url: url}
+	monitor.client = &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	monitor.rule = rule
 	monitor.Refresh()
 	return monitor
-}
-func NewSafetyMonitorHttpFromCfg(id string, cfg map[string]string) *SafetyMonitorHttp {
-	h := &SafetyMonitorHttp{id: id, name: cfg["name"], description: cfg["description"], url: cfg["url"], safe: false}
-	h.Refresh()
-	return h
 }
 
 func (sm *SafetyMonitorHttp) GetId() string {
@@ -68,10 +92,7 @@ func (sm *SafetyMonitorHttp) GetRawValue() string {
 }
 
 func (sm *SafetyMonitorHttp) Refresh() {
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
-	response, err := client.Get(sm.url)
+	response, err := sm.client.Get(sm.url)
 	if err != nil {
 		sm.safe = false
 		sm.lastValue = ""
@@ -88,7 +109,7 @@ func (sm *SafetyMonitorHttp) Refresh() {
 	_ = response.Body.Close()
 	content := string(buf)
 	sm.lastValue = content
-	sm.safe = IsSafeString(content)
+	sm.safe = sm.rule.isSafe(content)
 	sm.lastRefreshTime = time.Now()
 }
 
@@ -147,6 +168,7 @@ type SafetyMonitorFile struct {
 	path            string
 	lastRefreshTime time.Time
 	lastValue       string
+	rule            *SafetyMatchingRule
 }
 
 func (sm *SafetyMonitorFile) GetId() string {
@@ -186,18 +208,12 @@ func (sm *SafetyMonitorFile) Refresh() {
 	buf = buf[:n]
 	content := string(buf)
 	sm.lastValue = content
-	sm.safe = IsSafeString(content)
+	sm.safe = sm.rule.isSafe(content)
 	sm.lastRefreshTime = time.Now()
 }
 
-func NewSafetyMonitorFileFromCfg(id string, cfg map[string]string) *SafetyMonitorFile {
-	file := &SafetyMonitorFile{id: id, name: cfg["name"], description: cfg["description"], path: cfg["path"]}
-	file.Refresh()
-	return file
-}
-
-func NewSafetyMonitorFile(id string, name string, description string, path string) *SafetyMonitorFile {
-	file := &SafetyMonitorFile{id: id, name: name, description: description, path: path}
+func NewSafetyMonitorFile(id string, name string, description string, path string, rule *SafetyMatchingRule) *SafetyMonitorFile {
+	file := &SafetyMonitorFile{id: id, name: name, description: description, path: path, rule: rule}
 	file.Refresh()
 	return file
 }

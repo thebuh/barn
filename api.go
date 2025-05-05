@@ -41,13 +41,14 @@ func (d *Device) IsConnected(id ClientId) bool {
 }
 func (d *Device) ConnectClient(id ClientId) {
 	for clientId, client := range d.ConnectedClients {
-		if clientId == id {
-			if client.Connected == false {
-				client.Connected = true
-				return
-			}
+		if clientId != id {
+			continue
+		}
+		if client.Connected == false {
+			client.Connected = true
 			return
 		}
+		return
 	}
 	cc := &ConnectedClient{
 		ClientId:            id,
@@ -59,9 +60,10 @@ func (d *Device) ConnectClient(id ClientId) {
 
 func (d *Device) DisconnectClient(id ClientId) {
 	for clientId := range d.ConnectedClients {
-		if clientId == id {
-			delete(d.ConnectedClients, id)
+		if clientId != id {
+			continue
 		}
+		delete(d.ConnectedClients, id)
 	}
 }
 
