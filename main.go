@@ -4,7 +4,6 @@ import (
 	"bytes"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/thebuh/barn/cmd"
 	"time"
 )
 
@@ -59,5 +58,4 @@ func main() {
 		barnSrv.Refresh()
 		time.Sleep(10 * time.Second)
 	}
-	cmd.Execute()
 }
