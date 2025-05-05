@@ -2,6 +2,19 @@
 <b>barn</b> is a ASCOM Alpaca compatible safety monitor driver, allowing you to expose local files or remote URLs as ASCOM compatible safety monitor devices.
 </p>
 
+## Running
+
+There are no compiled binaries provided (for now), but you can use docker to run barn.
+
+Build image:
+```shell
+docker build . -t barn
+```
+And then run it, adjust ports and config file path if necessary:
+```shell
+docker run -p8888:8888 -p32227:32227 -it -v <Full path to config file>/barn.yaml:/barn.yaml barn
+```
+
 ## Configuration
 
 Configuration file should be named **barn.yaml** and goes into same directory as **barn** binary.
