@@ -38,7 +38,7 @@ const (
 // AvailableSensors contains all supported sensor names
 var AvailableSensors = map[string]bool{
 	SensorAveragePeriod:  true,
-	SensorCloudCover:     true,
+	SensorCloudCover:     false,
 	SensorDewPoint:       true,
 	SensorHumidity:       true,
 	SensorPressure:       true,
