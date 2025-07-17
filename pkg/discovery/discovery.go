@@ -1,8 +1,7 @@
-package main
+package discovery
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
@@ -38,7 +37,7 @@ func (s *DiscoveryServer) Start() {
 	udpServer, err := net.ListenPacket("udp", s.ListenString)
 
 	if err != nil {
-		log.Fatal(err)
+		fmt.Errorf(err.Error())
 	}
 	s.Conn = udpServer
 	defer s.Close()
@@ -49,7 +48,7 @@ func (s *DiscoveryServer) Start() {
 		if err != nil {
 			continue
 		}
-		log.Debug(fmt.Sprintf("GOT Discovery packet From %s", addr))
+		fmt.Sprintf("GOT Discovery packet From %s", addr)
 		msg := string(buf)
 		//Only handle and reply to discovery packets 1st version
 		if strings.HasPrefix(msg, "alpacadiscovery1") {
@@ -63,7 +62,7 @@ func (s *DiscoveryServer) composeDiscoveryReply() string {
 
 // Reply with our alpaca port
 func (s *DiscoveryServer) handleDiscoveryPacket(addr net.Addr) {
-	log.Debug(fmt.Sprintf("Sending discovery alpacaport packet to %s", addr))
+	fmt.Sprintf("Sending discovery alpacaport packet to %s", addr)
 	s.Conn.WriteTo([]byte(s.composeDiscoveryReply()), addr)
 }
 func (s *DiscoveryServer) Close() {

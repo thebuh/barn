@@ -1,4 +1,4 @@
-package main
+package monitor
 
 import (
 	"errors"
@@ -17,6 +17,7 @@ type SafetyMonitor interface {
 	GetName() string
 	GetDescription() string
 	GetRawValue() string
+	GetTimeStamp() time.Time
 }
 
 type SafetyMatchingRule struct {
@@ -91,6 +92,10 @@ func (sm *SafetyMonitorHttp) GetRawValue() string {
 	return sm.lastValue
 }
 
+func (sm *SafetyMonitorHttp) GetTimeStamp() time.Time {
+	return sm.lastRefreshTime
+}
+
 func (sm *SafetyMonitorHttp) Refresh() {
 	response, err := sm.client.Get(sm.url)
 	if err != nil {
@@ -160,6 +165,10 @@ func (sm *SafetyMonitorDummy) GetRawValue() string {
 	return ""
 }
 
+func (sm *SafetyMonitorDummy) GetTimeStamp() time.Time {
+	return time.Time{}
+}
+
 type SafetyMonitorFile struct {
 	id              string
 	name            string
@@ -184,6 +193,10 @@ func (sm *SafetyMonitorFile) GetDescription() string {
 
 func (sm *SafetyMonitorFile) GetRawValue() string {
 	return sm.lastValue
+}
+
+func (sm *SafetyMonitorFile) GetTimeStamp() time.Time {
+	return sm.lastRefreshTime
 }
 
 func (sm *SafetyMonitorFile) IsSafe() bool {

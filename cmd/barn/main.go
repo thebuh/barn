@@ -2,15 +2,18 @@ package main
 
 import (
 	"bytes"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"time"
+	api "github.com/thebuh/barn/internal/api"
+	"github.com/thebuh/barn/internal/app"
+	"github.com/thebuh/barn/pkg/discovery"
 )
 
 func fakeConfig() {
 	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
 
-	// any approach to require this configuration into your program.
 	var yamlExample = []byte(`
 monitors:
   file:
@@ -25,6 +28,10 @@ monitors:
     fake:
       name: "Fake monitor"
       is_safe: true
+weather:
+  dummy:
+    name: "Weather"
+    description: "Weather conditions"
 `)
 
 	viper.ReadConfig(bytes.NewBuffer(yamlExample))
@@ -43,19 +50,20 @@ func main() {
 	//if err != nil {
 	//	panic(fmt.Errorf("fatal error config file: %w", err))
 	//}
-	barnSrv := New()
+	barnApp := app.New()
 	mCfg := viper.GetViper()
-	barnSrv.LoadMonitorsFromConfig(mCfg)
+	barnApp.LoadMonitorsFromConfig(mCfg)
+	barnApp.LoadWeatherFromConfig(mCfg)
 
 	apiPort := viper.GetUint32("api.port")
 	discoveryPort := viper.GetUint32("discovery.port")
-	discovery := NewDiscoverySever(discoveryPort, apiPort)
-	api := NewApiServer(barnSrv, apiPort)
-	go discovery.Start()
-	defer discovery.Close()
+	disc := discovery.NewDiscoverySever(discoveryPort, apiPort)
+	api := api.NewApiServer(barnApp, apiPort)
+	go disc.Start()
+	defer disc.Close()
 	go api.Start()
 	for {
-		barnSrv.Refresh()
+		barnApp.Refresh()
 		time.Sleep(10 * time.Second)
 	}
 }

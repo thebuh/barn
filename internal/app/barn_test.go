@@ -1,9 +1,10 @@
-package main
+package app
 
 import (
 	"bytes"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/thebuh/barn/internal/monitor"
 	"testing"
 )
 
@@ -41,7 +42,7 @@ monitors:
 
 func TestBarnServer_AddMonitorTest(t *testing.T) {
 	var barn = New()
-	sm := NewSafetyMonitorDummy("dummy", "name", "description", false)
+	sm := monitor.NewSafetyMonitorDummy("dummy", "name", "description", false)
 	barn.AddMonitor(sm)
 	assert.Equal(t, barn.monitors[sm.GetId()], sm, "List of monitors should contain monitor")
 	assert.Equal(t, "dummy", barn.GetMonitor(sm.GetId()).GetId(), "List of monitors should contain monitor")
@@ -49,16 +50,16 @@ func TestBarnServer_AddMonitorTest(t *testing.T) {
 
 func TestBarnServer_RemoveMonitorTest(t *testing.T) {
 	var barn = New()
-	sm := NewSafetyMonitorDummy("dummy", "name", "description", false)
+	sm := monitor.NewSafetyMonitorDummy("dummy", "name", "description", false)
 	barn.AddMonitor(sm)
 	barn.RemoveMonitor("dummy")
 	assert.Nil(t, barn.monitors["dummy"], "should be nil")
 }
 func TestBarnServer_GetMonitorByIndex(t *testing.T) {
 	var barn = New()
-	sm := NewSafetyMonitorDummy("dummy", "name", "description", false)
+	sm := monitor.NewSafetyMonitorDummy("dummy", "name", "description", false)
 	barn.AddMonitor(sm)
-	sm2 := NewSafetyMonitorDummy("aummy2", "name", "description", true)
+	sm2 := monitor.NewSafetyMonitorDummy("aummy2", "name", "description", true)
 	barn.AddMonitor(sm2)
 	smr, _ := barn.GetMonitorByIndex(0)
 	assert.Equal(t, "dummy", smr.GetId(), "should be equal")
@@ -77,7 +78,7 @@ func TestBarnServer_LoadConfig(t *testing.T) {
 	assert.NotNil(t, barn.GetMonitor("remote"), "shouldn't be nil")
 	assert.NotNil(t, barn.GetMonitor("remote2"), "shouldn't be nil")
 	switch v := barn.GetMonitor("remote").(type) {
-	case *SafetyMonitorHttp:
+	case *monitor.SafetyMonitorHttp:
 		assert.Equal(t, "http://127.0.0.1/test", v.url, "should be equal")
 		assert.Equal(t, "Some remote url", v.GetName(), "should be equal")
 		assert.Equal(t, "Some remote url description", v.GetDescription(), "should be equal")
@@ -88,7 +89,7 @@ func TestBarnServer_LoadConfig(t *testing.T) {
 	}
 	assert.NotNil(t, barn.GetMonitor("local"), "shouldn't be nil")
 	switch v := barn.GetMonitor("local").(type) {
-	case *SafetyMonitorFile:
+	case *monitor.SafetyMonitorFile:
 		assert.Equal(t, v.path, "/tmp/test", "should be equal")
 	default:
 		assert.Fail(t, "Wrong type")

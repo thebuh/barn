@@ -1,4 +1,4 @@
-package main
+package api
 
 type alpacaResponse struct {
 	ClientTransactionID uint32 `json:"ClientTransactionID"`
@@ -17,7 +17,7 @@ type stringlistResponse struct {
 	alpacaResponse
 }
 
-type booleanResponse struct {
+type boolResponse struct {
 	Value bool `json:"Value"`
 	alpacaResponse
 }
@@ -69,4 +69,19 @@ type ServerDescription struct {
 	Manufacturer        string `json:"Manufacturer"`
 	ManufacturerVersion string `json:"ManufacturerVersion"`
 	Location            string `json:"Location"`
+}
+
+type DeviceState struct {
+	Name  string      `json:"Name"`
+	Value interface{} `json:"Value"`
+}
+
+type deviceStateResponse struct {
+	Value []DeviceState `json:"Value"`
+	alpacaResponse
+}
+
+type percentDoubleResponse struct {
+	Value float64 `json:"Value"`
+	alpacaResponse
 }
