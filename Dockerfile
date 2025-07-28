@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as builder
+FROM golang:1.24-alpine as builder
 WORKDIR /app
 COPY . .
 RUN go mod download
@@ -8,7 +8,7 @@ FROM alpine as barn
 WORKDIR /
 COPY --from=builder /app/barn .
 
-EXPOSE 8888
+EXPOSE 8080
 EXPOSE 32227/udp
 
 
