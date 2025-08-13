@@ -207,7 +207,7 @@ func (o *ObservingConditionsDummy) GetAveragePeriod() float64 {
 }
 
 func (o *ObservingConditionsDummy) SetAveragePeriod(period float64) error {
-	if period <= 0 {
+	if period < 0 {
 		return ErrInvalidPeriod
 	}
 	o.condition.AveragePeriod = period
@@ -299,6 +299,7 @@ func NewObservingConditionsHttp(id string, name string, description string, url 
 	cond.client = &http.Client{
 		Timeout: 5 * time.Second,
 	}
+	cond.SetAveragePeriod(0)
 	cond.Refresh()
 	return cond, nil
 }
@@ -382,7 +383,7 @@ func (o *ObservingConditionsHttp) GetAveragePeriod() float64 {
 }
 
 func (o *ObservingConditionsHttp) SetAveragePeriod(period float64) error {
-	if period <= 0 {
+	if period < 0 {
 		return ErrInvalidPeriod
 	}
 	o.condition.AveragePeriod = period

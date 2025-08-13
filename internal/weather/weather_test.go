@@ -119,10 +119,13 @@ func TestObservingConditionsDummy_SetAveragePeriod(t *testing.T) {
 		t.Errorf("Expected average period 10.0, got %f", dummy.GetAveragePeriod())
 	}
 
-	// Test invalid period
+	// Test 0 period
 	err = dummy.SetAveragePeriod(0)
-	if err != ErrInvalidPeriod {
-		t.Errorf("Expected error %v, got %v", ErrInvalidPeriod, err)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if dummy.GetAveragePeriod() != 0.0 {
+		t.Errorf("Expected average period 0.0, got %f", dummy.GetAveragePeriod())
 	}
 
 	err = dummy.SetAveragePeriod(-1.0)
@@ -561,10 +564,13 @@ func TestObservingConditionsHttp_SetAveragePeriod(t *testing.T) {
 		t.Errorf("Expected average period 10.0, got %f", http.GetAveragePeriod())
 	}
 
-	// Test invalid period
-	err = http.SetAveragePeriod(0)
-	if err != ErrInvalidPeriod {
-		t.Errorf("Expected error %v, got %v", ErrInvalidPeriod, err)
+	// Test valid 0 period
+	err = http.SetAveragePeriod(0.0)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if http.GetAveragePeriod() != 0.0 {
+		t.Errorf("Expected average period 0.0, got %f", http.GetAveragePeriod())
 	}
 
 	err = http.SetAveragePeriod(-1.0)
@@ -780,7 +786,6 @@ func TestIsSensorAvailable(t *testing.T) {
 	// Test available sensors
 	availableSensors := []string{
 		SensorAveragePeriod,
-		SensorCloudCover,
 		SensorDewPoint,
 		SensorHumidity,
 		SensorPressure,
@@ -788,6 +793,7 @@ func TestIsSensorAvailable(t *testing.T) {
 		SensorWindDirection,
 		SensorWindGust,
 		SensorWindSpeed,
+		SensorTemperature,
 	}
 
 	for _, sensor := range availableSensors {
@@ -798,11 +804,11 @@ func TestIsSensorAvailable(t *testing.T) {
 
 	// Test unavailable sensors
 	unavailableSensors := []string{
+		SensorCloudCover,
 		SensorSkyBrightness,
 		SensorSkyQuality,
 		SensorSkyTemperature,
 		SensorStarFWHM,
-		SensorTemperature,
 	}
 
 	for _, sensor := range unavailableSensors {
